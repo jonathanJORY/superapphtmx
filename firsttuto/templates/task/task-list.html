@@ -1,0 +1,31 @@
+<section class="col-6">
+{% if messages %}
+<ul id="messages" class="messages" hx-get="{% url 'clear' %}" hx-trigger="load delay:3s">
+    {% for message in messages %}
+        <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul> 
+{% endif %}
+{% if tasks %}
+<form class="sortable list-group col-6" hx-post="" hx-trigger="end" hx-target="#task-list">
+    {% for task in tasks %}
+    <div>
+        <input type="hidden" name="task_order" value="{{ task.pk }}">
+        <li class="list-group-item d-flex justify-content-between">{{ task.description }}
+            <span class="badge bg-danger"
+            style="cursor:pointer;"
+            hx-delete="{% url 'delete-task' task.pk %}"
+            hx-target="#task-list"
+            hx-confirm="Delete this task ?">X</span>
+        </li>
+    </div>
+    {% endfor %}
+</form>
+{% else %}
+<p>You don t have any task.</p>
+{% endif %}
+
+</section>
+<section class="col-4 justify-content-end">
+    {% include 'task/search.html' %}
+</section>

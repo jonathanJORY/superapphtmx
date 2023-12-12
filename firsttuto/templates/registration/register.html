@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="align-center col-8 offset-2">
+    <p class="lead mb-3 ml-0">Register</p>
+    <hr>
+    <form action="{% url 'register' %}" method="post" autocomplete="off">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+            <label for="">{{ form.username.label_tag }}</label>
+            {{ form.username.errors }}
+            {% render_field form.username class="form-control" hx-post="/check_username/" hx-trigger="keyup throttle:2s" hx-target="#username-error" hx-swap="outerHTML"%}
+            <div id="username-error"></div>
+            <label for="">{{ form.password1.label_tag }}</label>
+            {{ form.password1.errors }}
+            {% render_field form.password1 class="form-control" %}
+            <label for="">{{ form.password2.label_tag }}</label>
+            {{ form.password2.errors }}
+            {% render_field form.password2 class="form-control" %}
+        </div>
+        <button type="submit" class="btn btn-success mt-2">Register</button>
+    </form>
+</div>
+{% endblock %}
