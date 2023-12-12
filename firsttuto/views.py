@@ -10,8 +10,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 
-from firsttuto.models import Task
-
+from firsttuto.models import Task, UserTask
+from firsttuto.utils import get_max_order, reorder
 # Create your views here.
 
 class IndexView(TemplateView):
@@ -52,33 +52,50 @@ class TaskList(LoginRequiredMixin,ListView):
     context_object_name = 'tasks'
 
     def get_queryset(self):
-        user = self.request.user
-        return user.tasks.all()
+        return UserTask.objects.filter(user=self.request.user).order_by('order')
     
 @login_required
 def add_task(request):
     desc = request.POST.get('taskdescription')
     task = Task.objects.get_or_create(description=desc)[0]
-    request.user.tasks.add(task)
-    tasks = request.user.tasks.all()
+
+    #request.user.tasks.add(task)
+    if not UserTask.objects.filter(user=request.user,task=task).exists():
+        UserTask.objects.create(
+            user=request.user,
+            task=task,
+            order=get_max_order(request.user))
+    #tasks = request.user.tasks.all()
+    tasks = UserTask.objects.filter(user=request.user).order_by('order')
     messages.success(request,"New Task: %s" % (desc))
     return render(request,'task/task-list.html',{'tasks':tasks})
 
 @login_required
 @require_http_methods(['DELETE'])
 def delete_task(request,pk):
-    request.user.tasks.remove(pk)
-    tasks = request.user.tasks.all()
+    #request.user.tasks.remove(pk)
+    #tasks = request.user.tasks.all()
+    UserTask.objects.filter(pk=pk).delete()
+    reorder(request.user)
+    tasks = UserTask.objects.filter(user=request.user).order_by('order')
     return render(request,'task/task-list.html',{'tasks':tasks})
 
 @login_required
 def search_task(request):
     search_text = request.POST.get('search')
-    usertasks = request.user.tasks.all()
+    #usertasks = request.user.tasks.all()
+    usertasks = UserTask.objects.filter(user=request.user)
     results = Task.objects.filter(description__icontains=search_text).exclude(
-        description__in=usertasks.values_list('description',flat=True))[:10]
+        description__in=usertasks.values_list('task__description',flat=True))[:10]
     context={"results":results}
     return render(request,'task/search-results.html',context)
 
 def clear(request):
     return HttpResponse("")
+
+def sort(request):
+    order = request.POST.getlist('task_order')
+    for i, task_id in enumerate(order):
+        task = UserTask.objects.get(pk=task_id)
+        UserTask.objects.filter(user=request.user,task=task.task).update(order=i+1)
+    return render(request,'task/task-list.html',{'tasks':UserTask.objects.filter(user=request.user).order_by('order')})

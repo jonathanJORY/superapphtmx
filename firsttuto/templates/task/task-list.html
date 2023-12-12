@@ -7,11 +7,12 @@
 </ul> 
 {% endif %}
 {% if tasks %}
-<form class="sortable list-group col-6" hx-post="" hx-trigger="end" hx-target="#task-list">
+<form class="sortable list-group col-6" hx-post="{% url 'sort' %}" hx-trigger="end" hx-target="#task-list">
+    <div class="htmx-indicator">Updating...</div>
     {% for task in tasks %}
     <div>
         <input type="hidden" name="task_order" value="{{ task.pk }}">
-        <li class="list-group-item d-flex justify-content-between">{{ task.description }}
+        <li class="list-group-item d-flex justify-content-between">{{ task.task.description }}
             <span class="badge bg-danger"
             style="cursor:pointer;"
             hx-delete="{% url 'delete-task' task.pk %}"
